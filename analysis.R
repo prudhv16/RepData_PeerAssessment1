@@ -1,64 +1,47 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+file = "RepData_PeerAssessment1/activity.csv"
+if (!file.exists(file)){
+    unzip("RepData_PeerAssessment1/activity.zip")
+}
 
-```{r echo=TRUE}
 library(ggplot2)
 library(lattice)
 library(Hmisc)
 library(dplyr)
-```
 
-## Loading and preprocessing the data
-```{r echo=TRUE}
-file = "activity.csv"
-if (!file.exists(file)){
-    unzip("RepData_PeerAssessment1/activity.zip")
-}
 data <- read.csv("activity.csv",header=TRUE,na.strings = "NA")
 
+#totalstepsperdate <- tapply(data$steps,data$date,FUN=sum,na.rm=TRUE)
+#qplot(totalstepsperdate,xlab="Total steps per day")
+
 totalstepsperdate <- aggregate(steps~date,data=data,sum)
-hist(totalstepsperdate$steps,breaks = 5,main="Total steps on each day",xlab="number of steps",col="red")
-```
+hist(totalstepsperdate$steps,breaks = 15,main="Total steps on each day",xlab="number of steps",col="red")
 
-
-## What is mean total number of steps taken per day?
-```{r echo=TRUE}
 meansteps = mean(totalstepsperdate$steps)
 mediansteps = median(totalstepsperdate$steps)
-print (meansteps)
-print (mediansteps)    
-```
 
-
-## What is the average daily activity pattern?
-```{r echo=TRUE}
 totstepsbyinterval <- aggregate(steps~interval,data=data,mean)
+
 with(totstepsbyinterval,plot(interval,steps,type='l',main="Average daily activity pattern"))
+
 totstepsbyinterval[which.max(totstepsbyinterval$steps),]
-```
 
+sum(!is.na(data))
 
-## Imputing missing values
-```{r echo=TRUE}
+#replacing missing values
+
 meandata <- data
 meandata <- mutate(meandata, steps=impute(steps))
+#steps <- meandata$steps
+#steps[is.na(steps)] <- mean(steps,na.rm = TRUE)
+#meandata$steps <- steps
 
 stepsperdata <- aggregate(steps~date,data=meandata,sum)
 hist(stepsperdata$steps,main="steps per day after mean imputation",xlab="Number of steps",col="green",breaks=15)
-```
 
-## Mean and median after imputation
-```{r echo=TRUE}
+#calculating mean and median after imputation.
 meansteps = mean(stepsperdata$steps)
 mediansteps = median(stepsperdata$steps)
-```
 
-## Are there differences in activity patterns between weekdays and weekends?
-```{r echo=TRUE}
 daycreater <- function(date) {
     day <- weekdays(date)
     if (day %in% c("Monday","Tuesday","Wednesday","Thursday","Friday")) {
@@ -80,5 +63,3 @@ stepsperinterval <- aggregate(steps~interval + day,meandata,mean)
 averages <- aggregate(steps ~ interval + day, data=meandata, mean)
 ggplot(averages, aes(interval, steps)) + geom_line() + facet_grid(day ~ .) +
     xlab("5-minute interval") + ylab("Number of steps")
-```
-
